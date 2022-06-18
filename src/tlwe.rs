@@ -41,8 +41,8 @@ impl TlweKey {
         let e = d_ta();
         let mut rng = rand::thread_rng();
         let mut s: [Torus; N] = [0; N];
-        for i in 0..N {
-            s[i] = rng.gen_range(0..2);
+        for i in s.iter_mut() {
+            *i = rng.gen_range(0..2);
         }
         TlweKey {
             key_s: (s),
