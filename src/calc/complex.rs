@@ -24,10 +24,9 @@ impl Complex {
     }
     */
     pub fn omega(n: usize, k: i64) -> Self {
-        // to do change
         Self {
-            re: PI * 2.0 * (k as f64) / (n as f64).cos(),
-            im: PI * 2.0 * (k as f64) / (n as f64).sin(),
+            re: (PI * 2.0 * (k as f64) / (n as f64)).cos(),
+            im: (PI * 2.0 * (k as f64) / (n as f64)).sin(),
         }
     }
 }
