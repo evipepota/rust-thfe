@@ -1,6 +1,6 @@
 type Torus = u32;
 
-const A: f64 = 1.0 / 2i64.pow(15) as f64;
+const ALPHA: f64 = 1.0 / 2i64.pow(15) as f64;
 const N: usize = 635;
 
 use rand::prelude::{thread_rng, Distribution};
@@ -18,7 +18,7 @@ fn f2torus(src: f64) -> Torus {
 fn d_ta() -> Torus {
     //choose from modular normal distribution
     let mut rng = thread_rng();
-    let dist = rand_distr::Normal::<f64>::new(0.0, A).unwrap();
+    let dist = rand_distr::Normal::<f64>::new(0.0, ALPHA).unwrap();
     f2torus(dist.sample(&mut rng))
 }
 
@@ -30,21 +30,22 @@ pub struct TlweKey {
 impl Copy for TlweKey {}
 
 impl Clone for TlweKey {
+    //Ownership
     fn clone(&self) -> TlweKey {
         *self
     }
 }
 
 impl TlweKey {
-    pub fn keygen() -> TlweKey {
-        //s, e
+    pub fn keygen() -> Self {
+        //generate s, e
         let e = d_ta();
         let mut rng = rand::thread_rng();
         let mut s: [Torus; N] = [0; N];
         for i in s.iter_mut() {
             *i = rng.gen_range(0..2);
         }
-        TlweKey {
+        Self {
             key_s: (s),
             key_e: (e),
         }
@@ -94,6 +95,7 @@ struct Tlwe {
 impl Copy for Tlwe {}
 
 impl Clone for Tlwe {
+    //Ownership
     fn clone(&self) -> Tlwe {
         *self
     }
