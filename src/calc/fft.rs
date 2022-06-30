@@ -1,7 +1,8 @@
 use crate::{complex::Complex, trlwe};
 type Torus = u32;
+const N: usize = trlwe::N;
 
-fn ufft(a: &mut [Complex; 2*trlwe::N]) {
+fn ufft(a: &mut [Complex; 2 * N]) {
     let n = a.len();
     let mut m = n;
 
@@ -18,7 +19,7 @@ fn ufft(a: &mut [Complex; 2*trlwe::N]) {
     }
 }
 
-fn iufft(a: &mut [Complex; 2*trlwe::N]) {
+fn iufft(a: &mut [Complex; 2 * N]) {
     // inv
     let n = a.len();
     let mut m = 2;
@@ -42,21 +43,21 @@ fn iufft(a: &mut [Complex; 2*trlwe::N]) {
     }
 }
 
-pub fn convolution(a: [Torus; trlwe::N], b: [Torus; trlwe::N]) -> [Torus; 2*trlwe::N]{
-    let mut com_a: [Complex; 2*trlwe::N] = [Complex{re:0.0, im:0.0}; 2*trlwe::N];
-    let mut com_b: [Complex; 2*trlwe::N] = [Complex{re:0.0, im:0.0}; 2*trlwe::N];
-    for i in 0..trlwe::N {
+pub fn convolution(a: [Torus; N], b: [Torus; N]) -> [Torus; 2 * N] {
+    let mut com_a: [Complex; 2 * N] = [Complex { re: 0.0, im: 0.0 }; 2 * N];
+    let mut com_b: [Complex; 2 * N] = [Complex { re: 0.0, im: 0.0 }; 2 * N];
+    for i in 0..N {
         com_a[i].re = a[i] as f64;
         com_b[i].re = b[i] as f64;
     }
     ufft(&mut com_a);
     ufft(&mut com_b);
-    for i in 0..2*trlwe::N {
+    for i in 0..2 * N {
         com_a[i] *= com_b[i];
     }
     iufft(&mut com_a);
-    let mut ans: [Torus; 2*trlwe::N] = [0; 2*trlwe::N];
-    for i in 0..2*trlwe::N {
+    let mut ans: [Torus; 2 * N] = [0; 2 * N];
+    for i in 0..2 * N {
         ans[i] = com_a[i].re.round() as Torus;
     }
     return ans;
