@@ -102,7 +102,6 @@ pub fn decrypt(a: [Torus; N], b: Torus, s: [Torus; N]) -> i64 {
 pub fn test(bit: i64) {
     let t: Tlwe = Tlwe::new_tlwe(bit);
     println!("message: {}", bit);
-    println!();
 /*
     print!("encrypt = [");
     for i in 0..N {
@@ -126,4 +125,5 @@ pub fn test(bit: i64) {
     if t.dec == bit {
         println!("TLWE: OK!")
     }
+    println!();
 }
