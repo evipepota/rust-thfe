@@ -62,3 +62,16 @@ pub fn convolution(a: [Torus; N], b: [Torus; N]) -> [Torus; 2 * N] {
     }
     return ans;
 }
+
+pub fn convolution_mod(a: [Torus; N], b: [Torus; N]) -> [Torus; N] {
+    let ab = convolution(a, b);
+    let mut res: [Torus; N] = [0; N];
+    for i in 0..2 * N {
+        if i < N {
+            res[i] = res[i].wrapping_add(ab[i]);
+        } else {
+            res[i - N] = res[i - N].wrapping_sub(ab[i]);
+        }
+    }
+    return res;
+}
