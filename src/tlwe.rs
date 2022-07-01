@@ -103,6 +103,7 @@ impl Clone for Tlwe {
 
 impl Tlwe {
     pub fn new_tlwe(bit: i64) -> Tlwe {
+        //key(s, e),enc(a, b), dec(bit) 
         let key = TlweKey::keygen();
         let abs = encrypt(bit, key);
         let ans = decrypt(abs.0, abs.1, key.key_s);
