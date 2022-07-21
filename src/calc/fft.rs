@@ -1,8 +1,7 @@
-use crate::{complex::Complex, trlwe};
+use crate::complex::Complex;
 type Torus = u32;
-const N: usize = trlwe::N;
 
-fn ufft(a: &mut [Complex; 2 * N]) {
+fn ufft(a: &mut [Complex]) {
     let n = a.len();
     let mut m = n;
 
@@ -19,7 +18,7 @@ fn ufft(a: &mut [Complex; 2 * N]) {
     }
 }
 
-fn iufft(a: &mut [Complex; 2 * N]) {
+fn iufft(a: &mut [Complex]) {
     // inv
     let n = a.len();
     let mut m = 2;
@@ -43,34 +42,36 @@ fn iufft(a: &mut [Complex; 2 * N]) {
     }
 }
 
-pub fn convolution(a: [Torus; N], b: [Torus; N]) -> [Torus; 2 * N] {
-    let mut com_a: [Complex; 2 * N] = [Complex { re: 0.0, im: 0.0 }; 2 * N];
-    let mut com_b: [Complex; 2 * N] = [Complex { re: 0.0, im: 0.0 }; 2 * N];
-    for i in 0..N {
+pub fn convolution(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
+    let n = a.len();
+    let mut com_a: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
+    let mut com_b: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
+    for i in 0..n {
         com_a[i].re = a[i] as f64;
         com_b[i].re = b[i] as f64;
     }
     ufft(&mut com_a);
     ufft(&mut com_b);
-    for i in 0..2 * N {
+    for i in 0..2 * n {
         com_a[i] *= com_b[i];
     }
     iufft(&mut com_a);
-    let mut ans: [Torus; 2 * N] = [0; 2 * N];
-    for i in 0..2 * N {
+    let mut ans: Vec<Torus> = vec![0; 2 * n];
+    for i in 0..2 * n {
         ans[i] = com_a[i].re.round() as Torus;
     }
     return ans;
 }
 
-pub fn convolution_mod(a: [Torus; N], b: [Torus; N]) -> [Torus; N] {
+pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
+    let n = a.len();
     let ab = convolution(a, b);
-    let mut res: [Torus; N] = [0; N];
-    for i in 0..2 * N {
-        if i < N {
+    let mut res: Vec<Torus> = vec![0; n];
+    for i in 0..2 * n {
+        if i < n {
             res[i] = res[i].wrapping_add(ab[i]);
         } else {
-            res[i - N] = res[i - N].wrapping_sub(ab[i]);
+            res[i - n] = res[i - n].wrapping_sub(ab[i]);
         }
     }
     return res;

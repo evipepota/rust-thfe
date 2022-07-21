@@ -8,27 +8,23 @@ pub const N: usize = 512;
 pub const K: usize = 2;
 
 pub struct TrlweKey {
-    key_s: [[u32; N]; K],
-    key_e: [Torus; N],
+    pub key_s: Vec<Vec<u32>>,
+    pub key_e: Vec<Torus>,
 }
 
-impl Copy for TrlweKey {}
-
-impl Clone for TrlweKey {
-    //Ownership
-    fn clone(&self) -> TrlweKey {
-        *self
-    }
+pub struct TrlweEncryption {
+    pub a: Vec<Vec<Torus>>,
+    pub b: Vec<Torus>,
 }
 
 impl TrlweKey {
-    pub fn keygen() -> Self {
+    pub fn keygen(k: usize, n: usize) -> Self {
         //generate s, e
-        let mut e: [Torus; N] = [0; N];
+        let mut e: Vec<Torus> = vec![0; n];
         for i in e.iter_mut() {
             *i = torus_tool::d_ta(ALPHA);
         }
-        let mut s: [[u32; N]; K] = [[0; N]; K];
+        let mut s: Vec<Vec<u32>> = vec![vec![0; n]; k];
         let mut rng = rand::thread_rng();
         for i in s.iter_mut() {
             for j in i.iter_mut() {
@@ -43,74 +39,61 @@ impl TrlweKey {
 }
 
 pub struct Trlwe {
-    key: TrlweKey,
-    enc: ([[Torus; N]; K], [Torus; N]),
-    dec: [i64; N],
-}
-
-impl Copy for Trlwe {}
-
-impl Clone for Trlwe {
-    //Ownership
-    fn clone(&self) -> Trlwe {
-        *self
-    }
+    pub key: TrlweKey,
+    pub enc: TrlweEncryption,
+    //pub dec: Vec<i64>,
 }
 
 impl Trlwe {
-    //to do
-    pub fn new_trlwe(bit: [i64; N]) -> Trlwe {
-        let key = TrlweKey::keygen();
-        let abs = encrypt(bit, key);
-        let ans = decrypt(abs.0, abs.1, key.key_s);
+    pub fn new_trlwe(bit: &[i64], n: usize, k: usize) -> Trlwe {
+        let key = TrlweKey::keygen(k, n);
+        let abs = encrypt(bit, &key, n, k);
+        //let ans = decrypt(&abs.a, &abs.b, &key.key_s, n, k);
         Trlwe {
             key: (key),
-            enc: (abs),
-            dec: (ans),
+            enc: abs,
+            //dec: (ans),
         }
     }
 }
 
-#[warn(unused_must_use)]
-pub fn encrypt(m: [i64; N], key: TrlweKey) -> ([[Torus; N]; K], [Torus; N]) {
-    let mut a: [[Torus; N]; K] = [[0; N]; K];
-    let mut m2: [Torus; N] = [0; N];
-    for i in 0..N {
+pub fn encrypt(m: &[i64], key: &TrlweKey, n: usize, k: usize) -> TrlweEncryption {
+    let mut a: Vec<Vec<Torus>> = vec![vec![0; n]; k];
+    let mut m2: Vec<Torus> = vec![0; n];
+    for i in 0..n {
         m2[i] = torus_tool::f2torus(((2 * m[i] - 1) as f64) / 8.0);
     }
-    let mut b: [Torus; N] = [0; N];
-    let s = key.key_s;
-    let e = key.key_e;
+    let mut b: Vec<Torus> = vec![0; n];
+    let s = &key.key_s;
     let mut rng = rand::thread_rng();
 
-    for i in 0..K {
-        for j in 0..N {
+    for i in 0..k {
+        for j in 0..n {
             a[i][j] = rng.gen::<Torus>();
         }
-        let a_s = convolution_mod(a[i], s[i]);
-        for j in 0..N {
+        let a_s = convolution_mod(&a[i], &s[i]);
+        for j in 0..n {
             //b[j] += a_s[j];
             b[j] = b[j].wrapping_add(a_s[j]);
         }
     }
-    for i in 0..N {
+    for i in 0..n {
         //b[i] += m[i] + e[i];
-        b[i] = b[i].wrapping_add(m2[i].wrapping_add(e[i]));
+        b[i] = b[i].wrapping_add(m2[i].wrapping_add(key.key_e[i]));
     }
-    (a, b)
+    TrlweEncryption { a, b }
 }
 
-pub fn decrypt(a: [[Torus; N]; K], b: [Torus; N], s: [[Torus; N]; K]) -> [i64; N] {
-    //to do
-    let mut b: [Torus; N] = b;
-    for i in 0..K {
-        let a_s = convolution_mod(a[i], s[i]);
-        for j in 0..N {
+pub fn decrypt(a: &[Vec<Torus>], b: &[Torus], s: &[Vec<Torus>], n: usize, k: usize) -> Vec<i64> {
+    let mut b: Vec<Torus> = b.to_vec();
+    for i in 0..k {
+        let a_s = convolution_mod(&a[i], &s[i]);
+        for j in 0..n {
             b[j] = b[j].wrapping_sub(a_s[j]);
         }
     }
-    let mut res: [i64; N] = [0; N];
-    for i in 0..N {
+    let mut res: Vec<i64> = vec![0; n];
+    for i in 0..n {
         if u32::MAX / 2 > b[i] {
             //sgn = 1;
             res[i] = 1;
@@ -122,15 +105,16 @@ pub fn decrypt(a: [[Torus; N]; K], b: [Torus; N], s: [[Torus; N]; K]) -> [i64; N
     res
 }
 
-pub fn test() {
-    let mut bit = [0; N];
+pub fn test(n: usize, k: usize) {
+    let mut bit = vec![0; n];
     let mut rng = rand::thread_rng();
     for i in bit.iter_mut() {
         *i = rng.gen_range(0..2);
     }
-    let t: Trlwe = Trlwe::new_trlwe(bit);
-    for i in 0..N {
-        if bit[i] != t.dec[i] {
+    let t: Trlwe = Trlwe::new_trlwe(&bit, n, k);
+    let dec = decrypt(&t.enc.a, &t.enc.b, &t.key.key_s, n, k);
+    for i in bit.iter_mut().enumerate() {
+        if *i.1 != dec[i.0] {
             return;
         }
     }
