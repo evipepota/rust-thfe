@@ -1,28 +1,38 @@
 type Torus = u32;
 
-const ALPHA: f64 = 1.0 / 2i64.pow(15) as f64;
-pub const N: usize = 635;
+const ALPHA: f64 = 1.0 / 2i64.pow(15) as f64;//0.00003051757
+//const ALPHA: f64 = 0.0000925119974676756;
+pub const N: usize = 586;
+const K: usize = trlwe::K;
 
-use crate::calc::torus_tool;
+use crate::{calc::torus_tool, trlwe};
 use rand::Rng;
 
-pub struct TlweKey {
-    pub key_s: Vec<u32>,
+pub struct TlweKeylvl1 {
+    pub key_s: [Torus; K * trlwe::N],
     pub key_e: Torus,
 }
 
-pub struct TlweEncryption {
-    pub a: Vec<Torus>,
+pub struct TlweEncryptionlvl1 {
+    pub a: [Torus; K * trlwe::N],
     pub b: Torus,
 }
 
-impl TlweKey {
-    pub fn keygen(size: usize) -> Self {
+impl Copy for TlweEncryptionlvl1 {}
+
+impl Clone for TlweEncryptionlvl1 {
+    //Ownership
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl TlweKeylvl1 {
+    pub fn keygen() -> Self {
         //generate s, e
-        let e = torus_tool::d_ta(ALPHA);
+        let e = torus_tool::d_ta(trlwe::ALPHA);
         let mut rng = rand::thread_rng();
-        //let mut s: [u32; N] = [0; N];
-        let mut s: Vec<u32> = vec![0; size];
+        let mut s: [Torus; K * trlwe::N] = [0; K * trlwe::N];
         for i in s.iter_mut() {
             *i = rng.gen_range(0..2);
         }
@@ -33,32 +43,9 @@ impl TlweKey {
     }
 }
 
-struct Tlwe {
-    key: TlweKey,
-    enc: TlweEncryption,
-    //dec: i64,
-}
-
-impl Tlwe {
-    pub fn new_tlwe(bit: i64, size: usize) -> Tlwe {
-        //key(s, e),enc(a, b), dec(bit)
-        let key = TlweKey::keygen(size);
-        let abs = encrypt(bit, &key, size);
-        //let ans = decrypt(&abs.a, abs.b, &key.key_s, size);
-        Tlwe {
-            key: (key),
-            enc: abs,
-            //dec: (ans),
-        }
-    }
-}
-
-pub fn encrypt(m: i64, key: &TlweKey, size: usize) -> TlweEncryption {
-    let mut a: Vec<Torus> = vec![0; size];
-    let m = torus_tool::f2torus(((2 * m - 1) as f64) / 8.0);
+pub fn encrypt_torus_lvl1(m: Torus, key: &TlweKeylvl1) -> TlweEncryptionlvl1 {
+    let mut a: [Torus; K * trlwe::N] = [0; K * trlwe::N];
     let mut b: Torus = 0;
-    //let s = key.key_s;
-    //let e = key.key_e;
 
     let mut rng = rand::thread_rng();
     for i in a.iter_mut().enumerate() {
@@ -68,12 +55,21 @@ pub fn encrypt(m: i64, key: &TlweKey, size: usize) -> TlweEncryption {
     }
     //b += m + e;
     b = b.wrapping_add(m.wrapping_add(key.key_e));
-    TlweEncryption { a, b }
+    TlweEncryptionlvl1 { a, b }
 }
 
-pub fn decrypt(a: &[Torus], b: Torus, s: &[Torus], size: usize) -> i64 {
+pub fn encrypt_bit_lvl1(m: i64, key: &TlweKeylvl1) -> TlweEncryptionlvl1 {
+    let mut a: [Torus; K * trlwe::N] = [0; K * trlwe::N];
+    let m = torus_tool::f2torus(((2 * m - 1) as f64) / 8.0);
+    let mut b: Torus = 0;
+    //let s = key.key_s;
+    //let e = key.key_e;
+    encrypt_torus_lvl1(m, key)
+}
+
+pub fn decrypt_lvl1(a: &[Torus], b: Torus, s: &[Torus]) -> i64 {
     let mut b: Torus = b;
-    for i in 0..size {
+    for i in 0..K * trlwe::N {
         //b -= a[i] * s[i];
         b = b.wrapping_sub(a[i] * s[i]);
     }
@@ -86,34 +82,100 @@ pub fn decrypt(a: &[Torus], b: Torus, s: &[Torus], size: usize) -> i64 {
     }
 }
 
-pub fn test(bit: i64, size: usize) {
-    let t: Tlwe = Tlwe::new_tlwe(bit, size);
+pub struct TlweKeylvl0 {
+    pub key_s: [Torus; N],
+    pub key_e: Torus,
+}
+
+impl Copy for TlweEncryptionlvl0 {}
+
+impl Clone for TlweEncryptionlvl0 {
+    //Ownership
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+pub struct TlweEncryptionlvl0 {
+    pub a: [Torus; N],
+    pub b: Torus,
+}
+
+impl TlweKeylvl0 {
+    pub fn keygen() -> Self {
+        //generate s, e
+        let e = torus_tool::d_ta(ALPHA);
+        let mut rng = rand::thread_rng();
+        let mut s: [Torus; N] = [0; N];
+        for i in s.iter_mut() {
+            *i = rng.gen_range(0..2);
+        }
+        Self {
+            key_s: (s),
+            key_e: (e),
+        }
+    }
+}
+
+pub fn encrypt_torus_lvl0(m: Torus, key: &TlweKeylvl0) -> TlweEncryptionlvl0 {
+    let mut a: [Torus; N] = [0; N];
+    let mut b: Torus = 0;
+
+    let mut rng = rand::thread_rng();
+    for i in a.iter_mut().enumerate() {
+        *i.1 = rng.gen::<Torus>();
+        //b += a[i] * s[i];
+        b = b.wrapping_add(*i.1 * key.key_s[i.0]);
+    }
+    //b += m + e;
+    b = b.wrapping_add(m.wrapping_add(key.key_e));
+    TlweEncryptionlvl0 { a, b }
+}
+
+pub fn encrypt_bit_lvl0(m: i64, key: &TlweKeylvl0) -> TlweEncryptionlvl0 {
+    let mut a: [Torus; N] = [0; N];
+    let m = torus_tool::f2torus(((2 * m - 1) as f64) / 8.0);
+    let mut b: Torus = 0;
+    encrypt_torus_lvl0(m, key)
+}
+
+pub fn decrypt_lvl0(a: &[Torus], b: Torus, s: &[Torus]) -> i64 {
+    let mut b: Torus = b;
+    for i in 0..N {
+        //b -= a[i] * s[i];
+        b = b.wrapping_sub(a[i] * s[i]);
+    }
+    if u32::MAX / 2 > b {
+        //sgn = 1;
+        1
+    } else {
+        //sgn = -1;
+        0
+    }
+}
+
+/*pub fn test(bit: i64, size: usize) {
+    for i in 0..50 {
+    let key = TlweKeylvl0::keygen();
+    let t: TlweEncryptionlvl0 = encrypt_bit_lvl0(bit, &key);
     println!("message: {}", bit);
-    let i = decrypt(&t.enc.a, t.enc.b, &t.key.key_s, size);
-    /*
-    print!("encrypt = [");
-    for i in 0..size {
-        print!("{}, ", t.enc.a[i]);
-    }
-    print!("{}", t.enc.b);
-    println!("]");
-    println!();
+    let i = decrypt_lvl0(&t.a, t.b, &key.key_s);
 
-    println!("e = {}", t.key.key_e);
-    println!();
-
-    print!("s = [");
-    for i in 0..size {
-        print!("{}, ", t.key.key_s[i]);
-    }
-    println!("]");
-    println!();
-
-    println!("decrypt: {}", i);
-    */
-    
     if i == bit {
         println!("TLWE: OK!")
     }
     println!();
-}
+    }
+}*/
+
+/*pub fn test2() {
+    let key = TlweKey::keygen(N);
+    let mut a0 = encrypt(0, &key, N);
+    let a1 = encrypt(1, &key, N);
+    for i in 0..N{
+        a0.a[i] = a0.a[i].wrapping_add(a1.a[i]);
+    }
+    a0.b = a0.b.wrapping_add(a1.b);
+    let d = decrypt(&a0.a, a0.b, &key.key_s, N);
+    println!("{}", d)
+}*/

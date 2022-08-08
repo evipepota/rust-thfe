@@ -2,7 +2,7 @@ use rand::prelude::{thread_rng, Distribution};
 type Torus = u32;
 
 pub fn f2torus(src: f64) -> Torus {
-    //f64 -> i32
+    //f64 -> u32
     let mut seisuu: f64 = src - src.round();
     if seisuu < 0.0 {
         seisuu += 1.0;
