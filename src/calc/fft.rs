@@ -1,5 +1,3 @@
-use num::traits::WrappingSub;
-
 use crate::complex::Complex;
 type Torus = u32;
 
@@ -46,29 +44,29 @@ fn iufft(a: &mut [Complex]) {
 
 fn fft(a: &[Torus], b: &[Torus]) -> Vec<i128> {
     let n = a.len();
-    let mut a_M = vec![0; n];
-    let mut b_M = vec![0; n];
-    let mut a_mM = vec![0; n];
-    let mut b_mM = vec![0; n];
-    let mut a_m = vec![0; n];
-    let mut b_m = vec![0; n];
+    let mut a_max = vec![0; n];
+    let mut b_max = vec![0; n];
+    let mut a_cnt = vec![0; n];
+    let mut b_cnt = vec![0; n];
+    let mut a_min = vec![0; n];
+    let mut b_min = vec![0; n];
 
     let div = 1 << 16;
     for i in 0..n {
-        a_M[i] = a[i] / div;
-        a_m[i] = a[i] % div;
-        a_mM[i] = a_m[i] + a_M[i];
-        b_M[i] = b[i] / div;
-        b_m[i] = b[i] % div;
-        b_mM[i] = b_m[i] + b_M[i];
+        a_max[i] = a[i] / div;
+        a_min[i] = a[i] % div;
+        a_cnt[i] = a_min[i] + a_max[i];
+        b_max[i] = b[i] / div;
+        b_min[i] = b[i] % div;
+        b_cnt[i] = b_min[i] + b_max[i];
     }
-    let M = convolution(&a_M, &b_M);
-    let mM = convolution(&a_mM, &b_mM);
-    let m = convolution(&a_m, &b_m);
+    let max = convolution(&a_max, &b_max);
+    let cnt = convolution(&a_cnt, &b_cnt);
+    let min = convolution(&a_min, &b_min);
 
     let mut res = vec![0; 2 * n];
     for i in 0..2 * n {
-        res[i] = (M[i] << (32)) + ((mM[i] - m[i] - M[i]) << 16) + m[i];
+        res[i] = (max[i] << (32)) + ((cnt[i] - min[i] - max[i]) << 16) + min[i];
     }
     res
 }

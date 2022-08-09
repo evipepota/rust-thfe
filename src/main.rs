@@ -3,13 +3,13 @@ mod sampleextractindex;
 mod tlwe;
 mod trgsw;
 mod trlwe;
+mod param;
 use calc::{
     complex,
     fft::{convolution_mod, fft_test},
 };
-use trgsw::{nand_test, test_blindrotate, test_identity_key_swwitch};
+use trgsw::nand_test;
 
-use crate::calc::fft::convolution;
 use rand::Rng;
 
 //type Torus = u32;
@@ -19,9 +19,9 @@ fn main() {
     //test_blindrotate();
     nand_test();
     //test_identity_key_swwitch();
-    //trlwe::test();
-    //tlwe::test(1, tlwe::N);
-    //tlwe::test(0, tlwe::N);
+    //trlwe::test_trlwe();
+    //tlwe::test(1);
+    //tlwe::test(0);
     //fft_testtest();
 }
 

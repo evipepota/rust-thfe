@@ -1,33 +1,34 @@
 type Torus = u32;
 
 use crate::{
-    tlwe::{self, TlweEncryptionlvl1, TlweKeylvl1},
-    trlwe::{self, TrlweEncryption, TrlweKey},
+    param,
+    tlwe::{TlweEncryptionlvl1, TlweKeylvl1},
+    trlwe::{TrlweEncryption, TrlweKey},
 };
 
 pub fn sample_extract_index_encryption(ab: &TrlweEncryption, x: usize) -> TlweEncryptionlvl1 {
-    const n: usize = trlwe::N;
-    const k: usize = trlwe::K;
-    let mut a: [Torus; k * n] = [0; k * n];
+    const N: usize = param::trlwe::N;
+    const K: usize = param::trlwe::K;
+    let mut a: [Torus; K * N] = [0; K * N];
     let b = ab.b[x];
-    for j in 0..k {
+    for j in 0..K {
         for i in 0..x + 1 {
-            a[i + n * j] = ab.a[j][x - i];
+            a[i + N * j] = ab.a[j][x - i];
         }
-        for i in x + 1..n {
-            a[i + n * j] = u32::MIN.wrapping_sub(ab.a[j][n + x - i]);
+        for i in x + 1..N {
+            a[i + N * j] = u32::MIN.wrapping_sub(ab.a[j][N + x - i]);
         }
     }
     TlweEncryptionlvl1 { a, b }
 }
 
-pub fn sample_extract_index_key(se: &TrlweKey, x: usize) -> TlweKeylvl1 {
-    const n: usize = trlwe::N;
-    const k: usize = trlwe::K;
-    let mut s: [Torus; k * n] = [0; k * n];
-    for j in 0..k {
-        for i in 0..n {
-            s[i + n * j] = se.key_s[j][i];
+pub fn sample_extract_index_key(se: &TrlweKey) -> TlweKeylvl1 {
+    const N: usize = param::trlwe::N;
+    const K: usize = param::trlwe::K;
+    let mut s: [Torus; K * N] = [0; K * N];
+    for j in 0..K {
+        for i in 0..N {
+            s[i + N * j] = se.key_s[j][i];
         }
     }
 
