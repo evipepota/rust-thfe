@@ -19,10 +19,9 @@ use crate::{
     trgsw::homnand,
 };
 
-//type Torus = u32;
-
 fn main() {
     nand_test();
+    //fft_testtest();
 }
 
 pub fn nand_test() {
@@ -45,31 +44,20 @@ pub fn nand_test() {
     }
 }
 
-pub fn test() {
-    //cmuxtest();
-    //test_blindrotate();
-    nand_test();
-    //test_identity_key_swwitch();
-    //trlwe::test_trlwe();
-    //tlwe::test(1);
-    //tlwe::test(0);
-    //fft_testtest();
-}
-
 pub fn fft_testtest() {
     let mut s: [u32; 512] = [0; 512];
-    let mut a: [u32; 512] = [0; 512];
+    let mut a: [u32; 512] = [1; 512];
     let mut rng = rand::thread_rng();
     for i in s.iter_mut() {
         *i = rng.gen::<u32>();
     }
     for i in a.iter_mut() {
-        *i = rng.gen::<u32>();
+        *i = rng.gen_range(0..512);
     }
     let a_s = convolution_mod(&a, &s);
     let a_stest = fft_test(&a, &s);
     for i in 0..512 {
-        if a_s[i] != a_stest[i] {
+        if a_s[i] == a_stest[i] {
             println!("{}, {}", a_s[i], a_stest[i]);
         }
     }

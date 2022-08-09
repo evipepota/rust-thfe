@@ -14,6 +14,25 @@ impl Clone for Complex {
     }
 }
 
+/*pub struct Omega {
+    pub o: [Complex; 512],
+}
+
+impl Omega {
+    pub fn omega_init(n: usize) -> Self {
+        let mut o = [Complex { re: 0.0, im: 0.0 }; 512];
+        for i in 0..512 {
+            o[i].re = (PI * 2.0 * (i as f64) / (n as f64)).cos();
+            o[i].im = (PI * 2.0 * (i as f64) / (n as f64)).sin();
+        }
+        Omega { o: (o) }
+    }
+}*/
+
+/*impl Omega {
+    fn omega_inti
+}*/
+
 impl Complex {
     /*
     pub fn new(abs: f64, args: f64) -> Self {
