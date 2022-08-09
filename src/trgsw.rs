@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::{
     calc::fft::convolution_mod,
     param,
@@ -10,7 +8,6 @@ use crate::{
     },
     trlwe::{decrypt2, encrypt_bit, zero_encrypt, TrlweEncryption, TrlweKey},
 };
-use std::time::Instant;
 
 type Torus = u32;
 pub type Trgsw =
@@ -72,59 +69,38 @@ fn extenalproduct(c: &Trgsw, t: &TrlweEncryption) -> TrlweEncryption {
     let mut out_a: [[Torus; param::trgsw::N]; param::trgsw::K] =
         [[0; param::trgsw::N]; param::trgsw::K];
     let mut out_b: [Torus; param::trgsw::N] = [0; param::trgsw::N];
-    let dec_a0 = decomposition(&t.a[0]);
-    let dec_a1 = decomposition(&t.a[1]);
+    let mut dec_a = [[[0; param::trgsw::N]; param::trgsw::L]; param::trgsw::K];
+    for i in dec_a.iter_mut().enumerate().take(param::trgsw::K) {
+        *i.1 = decomposition(&t.a[i.0]);
+    }
     let dec_b = decomposition(&t.b);
     for i in 0..param::trgsw::L {
-        let ch = convolution_mod(&dec_a0[i], &c[0][i]);
-        for j in 0..param::trgsw::N {
-            //out_a[0][j] += ch[j];
-            out_a[0][j] = out_a[0][j].wrapping_add(ch[j]);
+        for j in 0..param::trgsw::K {
+            for k in 0..param::trgsw::K {
+                let ch = convolution_mod(&dec_a[k][i], &c[j][param::trgsw::L * k + i]);
+                for o in ch.iter().enumerate().take(param::trgsw::N) {
+                    out_a[j][o.0] += o.1;
+                }
+            }
+            let ch = convolution_mod(&dec_b[i], &c[j][param::trgsw::L * param::trgsw::K + i]);
+            for o in ch.iter().enumerate().take(param::trgsw::N) {
+                out_a[j][o.0] += o.1;
+            }
         }
-        let ch = convolution_mod(&dec_a1[i], &c[0][param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_a[0][j] += ch[j];
-            out_a[0][j] = out_a[0][j].wrapping_add(ch[j]);
+        for k in 0..param::trgsw::K {
+            let ch = convolution_mod(&dec_a[k][i], &c[param::trgsw::K][param::trgsw::L * k + i]);
+            for o in ch.iter().enumerate().take(param::trgsw::N) {
+                out_b[o.0] += o.1;
+            }
         }
-        let ch = convolution_mod(&dec_b[i], &c[0][2 * param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_a[0][j] += ch[j];
-            out_a[0][j] = out_a[0][j].wrapping_add(ch[j]);
-        }
-
-        let ch = convolution_mod(&dec_a0[i], &c[1][i]);
-        for j in 0..param::trgsw::N {
-            //out_a[1][j] += ch[j];
-            out_a[1][j] = out_a[1][j].wrapping_add(ch[j]);
-        }
-        let ch = convolution_mod(&dec_a1[i], &c[1][param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_a[1][j] += ch[j];
-            out_a[1][j] = out_a[1][j].wrapping_add(ch[j]);
-        }
-        let ch = convolution_mod(&dec_b[i], &c[1][2 * param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_a[1][j] += ch[j];
-            out_a[1][j] = out_a[1][j].wrapping_add(ch[j]);
-        }
-
-        let ch = convolution_mod(&dec_a0[i], &c[2][i]);
-        for j in 0..param::trgsw::N {
-            //out_b[j] += ch[j];
-            out_b[j] = out_b[j].wrapping_add(ch[j]);
-        }
-        let ch = convolution_mod(&dec_a1[i], &c[2][param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_b[j] += ch[j];
-            out_b[j] = out_b[j].wrapping_add(ch[j]);
-        }
-        let ch = convolution_mod(&dec_b[i], &c[2][2 * param::trgsw::L + i]);
-        for j in 0..param::trgsw::N {
-            //out_b[j] += ch[j];
-            out_b[j] = out_b[j].wrapping_add(ch[j]);
+        let ch = convolution_mod(
+            &dec_b[i],
+            &c[param::trgsw::K][param::trgsw::L * param::trgsw::K + i],
+        );
+        for o in ch.iter().enumerate().take(param::trgsw::N) {
+            out_b[o.0] += o.1;
         }
     }
-
     TrlweEncryption { a: out_a, b: out_b }
 }
 
@@ -209,7 +185,6 @@ fn gate_bootstrapping_tlwe2tlwe(src: &TlweEncryptionlvl0, bk: &[Trgsw]) -> TlweE
     let trlwe = blind_rotate(src, bk, &res);
     sample_extract_index_encryption(&trlwe, 0)
 }
-
 
 pub fn bootstrappingkey_gen(key: &TlweKeylvl0, key2: &TrlweKey) -> Vec<Trgsw> {
     let trgsw_dum: Trgsw =
