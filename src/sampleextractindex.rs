@@ -25,12 +25,11 @@ pub fn sample_extract_index_key(se: &TrlweKey, x: usize) -> TlweKeylvl1 {
     const n: usize = trlwe::N;
     const k: usize = trlwe::K;
     let mut s: [Torus; k * n] = [0; k * n];
-    let e = se.key_e[x];
     for j in 0..k {
         for i in 0..n {
             s[i + n * j] = se.key_s[j][i];
         }
     }
 
-    TlweKeylvl1 { key_s: s, key_e: e }
+    TlweKeylvl1 { key_s: s }
 }

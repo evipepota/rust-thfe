@@ -1,4 +1,5 @@
 use num::traits::WrappingSub;
+use rand::Rng;
 
 use crate::{
     calc::{fft::convolution_mod, torus_tool::f2torus},
@@ -9,6 +10,7 @@ use crate::{
     },
     trlwe::{self, decrypt2, encrypt_bit, zero_encrypt, TrlweEncryption, TrlweKey},
 };
+use std::time::{Duration, Instant};
 
 type Torus = u32;
 type Trgsw = [[[Torus; N]; (K + 1) * L]; K + 1];
@@ -260,7 +262,7 @@ fn keyswtching_gen(key1: &TlweKeylvl1, key0: &TlweKeylvl0) -> KeySwitch {
     res
 }
 
-fn identity_key_swtching(ab: TlweEncryptionlvl1, ks: KeySwitch) -> TlweEncryptionlvl0 {
+fn identity_key_swtching(ab: TlweEncryptionlvl1, ks: &KeySwitch) -> TlweEncryptionlvl0 {
     const BASE: usize = 1 << BASEBIT;
     let mut res = TlweEncryptionlvl0 {
         a: [0; tlwe::N],
@@ -289,7 +291,7 @@ pub fn homnand(
     a0: TlweEncryptionlvl0,
     a1: TlweEncryptionlvl0,
     bk: &[Trgsw],
-    ks: KeySwitch,
+    ks: &KeySwitch,
 ) -> TlweEncryptionlvl0 {
     const MU: Torus = 1 << 29;
     let mut res = TlweEncryptionlvl0 {
@@ -305,7 +307,7 @@ pub fn homnand(
 
     let t1 = gate_bootstrapping_tlwe2tlwe(&res, bk);
 
-    identity_key_swtching(t1, ks)
+    identity_key_swtching(t1, &ks)
 }
 
 pub fn nand_test() {
@@ -317,15 +319,20 @@ pub fn nand_test() {
     let sk_trlew2tlwelvl1 = sample_extract_index_key(&sk_trlwe, 0);
 
     let ks = keyswtching_gen(&sk_trlew2tlwelvl1, &sk_tlwe);
+    for i in 0..30 {
+        let start = Instant::now();
+        let mut rng = rand::thread_rng();
+        let l = rng.gen_range(0..2);
+        let r = rng.gen_range(0..2);
+        let lhs = encrypt_bit_lvl0(l, &sk_tlwe);
+        let rhs = encrypt_bit_lvl0(r, &sk_tlwe);
 
-    let l = 0;
-    let r = 0;
-    let lhs = encrypt_bit_lvl0(l, &sk_tlwe);
-    let rhs = encrypt_bit_lvl0(r, &sk_tlwe);
-
-    let res = homnand(lhs, rhs, &bk, ks);
-    let ans = decrypt_lvl0(&res.a, res.b, &sk_tlwe.key_s);
-    println!("{}", ans);
+        let res = homnand(lhs, rhs, &bk, &ks);
+        let ans = decrypt_lvl0(&res.a, res.b, &sk_tlwe.key_s);
+        let end = start.elapsed();
+        println!("{} NAND {} = {}", l, r, ans);
+        println!("{}{:03}ms", end.as_secs(), end.subsec_millis());
+    }
 }
 
 pub fn test_blindrotate() {
@@ -357,7 +364,7 @@ pub fn test_identity_key_swwitch() {
         let ks = keyswtching_gen(&sk_trlew2tlwelvl1, &sk_tlwe);
 
         let tlwe1 = encrypt_bit_lvl1(p, &sk_trlew2tlwelvl1);
-        let tlwe0 = identity_key_swtching(tlwe1, ks);
+        let tlwe0 = identity_key_swtching(tlwe1, &ks);
         let d1 = decrypt_lvl1(&tlwe1.a, tlwe1.b, &sk_trlew2tlwelvl1.key_s);
         let d0 = decrypt_lvl0(&tlwe0.a, tlwe0.b, &sk_tlwe.key_s);
         println!("{}, {}", d0, d1);

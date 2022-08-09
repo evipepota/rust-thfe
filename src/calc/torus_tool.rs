@@ -3,11 +3,13 @@ type Torus = u32;
 
 pub fn f2torus(src: f64) -> Torus {
     //f64 -> u32
-    let mut seisuu: f64 = src - src.round();
+    /*let mut seisuu: f64 = src - src.round();
     if seisuu < 0.0 {
         seisuu += 1.0;
     }
-    (seisuu * (u32::MAX as f64)) as u32
+    (seisuu * (u32::MAX as f64)) as u32*/
+    let torus = (src % 1.0) as f64 * 2u64.pow(32) as f64;
+    return (torus as i64) as u32;
 }
 
 pub fn d_ta(std_dev: f64) -> Torus {

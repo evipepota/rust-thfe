@@ -47,13 +47,13 @@ fn iufft(a: &mut [Complex]) {
 fn fft(a: &[Torus], b: &[Torus]) -> Vec<i128> {
     let n = a.len();
     let mut a_M = vec![0; n];
-    let mut b_M  = vec![0; n];
+    let mut b_M = vec![0; n];
     let mut a_mM = vec![0; n];
     let mut b_mM = vec![0; n];
     let mut a_m = vec![0; n];
     let mut b_m = vec![0; n];
 
-    let div = 1<<20;
+    let div = 1 << 16;
     for i in 0..n {
         a_M[i] = a[i] / div;
         a_m[i] = a[i] % div;
@@ -66,9 +66,9 @@ fn fft(a: &[Torus], b: &[Torus]) -> Vec<i128> {
     let mM = convolution(&a_mM, &b_mM);
     let m = convolution(&a_m, &b_m);
 
-    let mut res = vec![0; 2*n];
-    for i in 0..2*n {
-        res[i] = (M[i] << (40)) + ((mM[i]-m[i]-M[i]) << 20) + m[i];
+    let mut res = vec![0; 2 * n];
+    for i in 0..2 * n {
+        res[i] = (M[i] << (32)) + ((mM[i] - m[i] - M[i]) << 16) + m[i];
     }
     res
 }
@@ -87,7 +87,7 @@ pub fn convolution(a: &[Torus], b: &[Torus]) -> Vec<i128> {
         com_a[i] *= com_b[i];
     }
     iufft(&mut com_a);
-    
+
     let mut ans = vec![0; 2 * n];
     for i in 0..2 * n {
         let k = com_a[i].re.round() as i128;
@@ -101,7 +101,7 @@ pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
     //let ab = convolution(a, b);
     let mut k = fft(a, b);
     let mut res: Vec<Torus> = vec![0; n];
-    for i in 0..2*n{
+    for i in 0..2 * n {
         k[i] %= u64::MAX as i128;
         if k[i] < 0 {
             k[i] += u64::MAX as i128;
@@ -109,29 +109,29 @@ pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
         if i < n {
             res[i] = res[i].wrapping_add(k[i] as u32);
         } else {
-            res[i-n] = res[i-n].wrapping_sub(k[i] as u32);
+            res[i - n] = res[i - n].wrapping_sub(k[i] as u32);
         }
     }
 
     return res;
 }
 
-/*pub fn fft_test(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
+pub fn fft_test(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
     let n = a.len();
     let mut res: Vec<Torus> = vec![0; n];
 
     for i in 0..n {
         for j in 0..n {
-            if i+j < n {
-                res[i+j] = res[i+j].wrapping_add(a[i].wrapping_mul(b[j]));
+            if i + j < n {
+                res[i + j] = res[i + j].wrapping_add(a[i].wrapping_mul(b[j]));
             } else {
-                res[i+j-n] = res[i+j-n].wrapping_sub(a[i].wrapping_mul(b[j]));
+                res[i + j - n] = res[i + j - n].wrapping_sub(a[i].wrapping_mul(b[j]));
             }
         }
     }
 
     res
-}*/
+}
 
 /*pub fn fft_test2(a: &[Torus], b: &[Torus]) -> Vec<i128> {
     let n = a.len();

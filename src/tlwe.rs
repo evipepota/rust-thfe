@@ -1,7 +1,7 @@
 type Torus = u32;
 
-const ALPHA: f64 = 1.0 / 2i64.pow(15) as f64;//0.00003051757
-//const ALPHA: f64 = 0.0000925119974676756;
+//const ALPHA: f64 = 1.0 / 2i64.pow(16) as f64;//0.00003051757
+const ALPHA: f64 = 0.0000925119974676756;
 pub const N: usize = 586;
 const K: usize = trlwe::K;
 
@@ -10,7 +10,6 @@ use rand::Rng;
 
 pub struct TlweKeylvl1 {
     pub key_s: [Torus; K * trlwe::N],
-    pub key_e: Torus,
 }
 
 pub struct TlweEncryptionlvl1 {
@@ -30,16 +29,12 @@ impl Clone for TlweEncryptionlvl1 {
 impl TlweKeylvl1 {
     pub fn keygen() -> Self {
         //generate s, e
-        let e = torus_tool::d_ta(trlwe::ALPHA);
         let mut rng = rand::thread_rng();
         let mut s: [Torus; K * trlwe::N] = [0; K * trlwe::N];
         for i in s.iter_mut() {
             *i = rng.gen_range(0..2);
         }
-        Self {
-            key_s: (s),
-            key_e: (e),
-        }
+        Self { key_s: (s) }
     }
 }
 
@@ -54,7 +49,9 @@ pub fn encrypt_torus_lvl1(m: Torus, key: &TlweKeylvl1) -> TlweEncryptionlvl1 {
         b = b.wrapping_add(*i.1 * key.key_s[i.0]);
     }
     //b += m + e;
-    b = b.wrapping_add(m.wrapping_add(key.key_e));
+    let e = torus_tool::d_ta(trlwe::ALPHA);
+    let mut rng = rand::thread_rng();
+    b = b.wrapping_add(m.wrapping_add(e));
     TlweEncryptionlvl1 { a, b }
 }
 
@@ -84,7 +81,6 @@ pub fn decrypt_lvl1(a: &[Torus], b: Torus, s: &[Torus]) -> i64 {
 
 pub struct TlweKeylvl0 {
     pub key_s: [Torus; N],
-    pub key_e: Torus,
 }
 
 impl Copy for TlweEncryptionlvl0 {}
@@ -104,16 +100,12 @@ pub struct TlweEncryptionlvl0 {
 impl TlweKeylvl0 {
     pub fn keygen() -> Self {
         //generate s, e
-        let e = torus_tool::d_ta(ALPHA);
         let mut rng = rand::thread_rng();
         let mut s: [Torus; N] = [0; N];
         for i in s.iter_mut() {
             *i = rng.gen_range(0..2);
         }
-        Self {
-            key_s: (s),
-            key_e: (e),
-        }
+        Self { key_s: (s) }
     }
 }
 
@@ -128,7 +120,9 @@ pub fn encrypt_torus_lvl0(m: Torus, key: &TlweKeylvl0) -> TlweEncryptionlvl0 {
         b = b.wrapping_add(*i.1 * key.key_s[i.0]);
     }
     //b += m + e;
-    b = b.wrapping_add(m.wrapping_add(key.key_e));
+    let e = torus_tool::d_ta(ALPHA);
+    let mut rng = rand::thread_rng();
+    b = b.wrapping_add(m.wrapping_add(e));
     TlweEncryptionlvl0 { a, b }
 }
 

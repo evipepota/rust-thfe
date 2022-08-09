@@ -1,12 +1,16 @@
-mod tlwe;
-mod trlwe;
 mod calc;
 mod sampleextractindex;
+mod tlwe;
 mod trgsw;
-use calc::complex;
+mod trlwe;
+use calc::{
+    complex,
+    fft::{convolution_mod, fft_test},
+};
 use trgsw::{nand_test, test_blindrotate, test_identity_key_swwitch};
 
 use crate::calc::fft::convolution;
+use rand::Rng;
 
 //type Torus = u32;
 
@@ -18,4 +22,24 @@ fn main() {
     //trlwe::test();
     //tlwe::test(1, tlwe::N);
     //tlwe::test(0, tlwe::N);
+    //fft_testtest();
+}
+
+pub fn fft_testtest() {
+    let mut s: [u32; 512] = [0; 512];
+    let mut a: [u32; 512] = [0; 512];
+    let mut rng = rand::thread_rng();
+    for i in s.iter_mut() {
+        *i = rng.gen::<u32>();
+    }
+    for i in a.iter_mut() {
+        *i = rng.gen::<u32>();
+    }
+    let a_s = convolution_mod(&a, &s);
+    let a_stest = fft_test(&a, &s);
+    for i in 0..512 {
+        if a_s[i] != a_stest[i] {
+            println!("{}, {}", a_s[i], a_stest[i]);
+        }
+    }
 }

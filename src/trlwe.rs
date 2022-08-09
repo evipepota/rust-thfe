@@ -7,14 +7,13 @@ use crate::{
 };
 
 type Torus = u32;
-pub const ALPHA: f64 = 1.0 / 2i64.pow(25) as f64;
-//pub const ALPHA: f64 = 0.0000000342338787018369;
+//pub const ALPHA: f64 = 1.0 / 2i64.pow(26) as f64;
+pub const ALPHA: f64 = 0.0000000342338787018369;
 pub const N: usize = 512;
 pub const K: usize = 2;
 
 pub struct TrlweKey {
     pub key_s: [[Torus; N]; K],
-    pub key_e: [Torus; N],
 }
 
 pub struct TrlweEncryption {
@@ -25,10 +24,6 @@ pub struct TrlweEncryption {
 impl TrlweKey {
     pub fn keygen() -> Self {
         //generate s, e
-        let mut e: [Torus; N] = [0; N];
-        for i in e.iter_mut() {
-            *i = torus_tool::d_ta(ALPHA);
-        }
         let mut s: [[Torus; N]; K] = [[0; N]; K];
         let mut rng = rand::thread_rng();
         for i in s.iter_mut() {
@@ -36,10 +31,7 @@ impl TrlweKey {
                 *j = rng.gen_range(0..2);
             }
         }
-        Self {
-            key_s: (s),
-            key_e: (e),
-        }
+        Self { key_s: (s) }
     }
 }
 
@@ -67,7 +59,8 @@ pub fn encrypt_torus(m: &[Torus], key: &TrlweKey) -> TrlweEncryption {
     }
     for i in 0..N {
         //b[i] += m[i] + e[i];
-        b[i] = b[i].wrapping_add(m[i].wrapping_add(key.key_e[i]));
+        let e = torus_tool::d_ta(ALPHA);
+        b[i] = b[i].wrapping_add(m[i].wrapping_add(e));
     }
     TrlweEncryption { a, b }
 }
