@@ -42,36 +42,7 @@ fn iufft(a: &mut [Complex]) {
     }
 }
 
-fn fft(a: &[Torus], b: &[Torus]) -> Vec<i128> {
-    let n = a.len();
-    let mut a_max = vec![0; n];
-    let mut b_max = vec![0; n];
-    let mut a_cnt = vec![0; n];
-    let mut b_cnt = vec![0; n];
-    let mut a_min = vec![0; n];
-    let mut b_min = vec![0; n];
-
-    let div = 1 << 16;
-    for i in 0..n {
-        a_max[i] = a[i] / div;
-        a_min[i] = a[i] % div;
-        a_cnt[i] = a_min[i] + a_max[i];
-        b_max[i] = b[i] / div;
-        b_min[i] = b[i] % div;
-        b_cnt[i] = b_min[i] + b_max[i];
-    }
-    let max = convolution(&a_max, &b_max);
-    let cnt = convolution(&a_cnt, &b_cnt);
-    let min = convolution(&a_min, &b_min);
-
-    let mut res = vec![0; 2 * n];
-    for i in 0..2 * n {
-        res[i] = (max[i] << (32)) + ((cnt[i] - min[i] - max[i]) << 16) + min[i];
-    }
-    res
-}
-
-pub fn convolution(a: &[Torus], b: &[Torus]) -> Vec<i128> {
+pub fn convolution(a: &[i32], b: &[i32]) -> Vec<i64> {
     let n = a.len();
     let mut com_a: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
     let mut com_b: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
@@ -88,7 +59,7 @@ pub fn convolution(a: &[Torus], b: &[Torus]) -> Vec<i128> {
 
     let mut ans = vec![0; 2 * n];
     for i in 0..2 * n {
-        let k = com_a[i].re.round() as i128;
+        let k = com_a[i].re.round() as i64;
         ans[i] = k;
     }
     return ans;
@@ -97,12 +68,31 @@ pub fn convolution(a: &[Torus], b: &[Torus]) -> Vec<i128> {
 pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
     let n = a.len();
     //let ab = convolution(a, b);
-    let mut k = fft(a, b);
+
+    //torus -> i64
+    let mut a_i64 = vec![0; n];
+    let mut b_i64 = vec![0; n];
+    for i in 0..n {
+        /*if a[i] > (u32::MAX/2) {
+            a_i64[i] = a[i] as i64 - (u32::MAX as i64);
+        } else {
+            a_i64[i] = a[i] as i64;
+        }
+        if b[i] > (u32::MAX/2) {
+            b_i64[i] = b[i] as i64 - (u32::MAX as i64);
+        } else {
+            b_i64[i] = b[i] as i64;
+        }*/
+        a_i64[i] = a[i] as i32;
+        b_i64[i] = b[i] as i32;
+    }
+    let mut k = convolution(&a_i64, &b_i64);
+
     let mut res: Vec<Torus> = vec![0; n];
     for i in 0..2 * n {
-        k[i] %= u64::MAX as i128;
+        k[i] %= u32::MAX as i64;
         if k[i] < 0 {
-            k[i] += u64::MAX as i128;
+            k[i] += u32::MAX as i64;
         }
         if i < n {
             res[i] = res[i].wrapping_add(k[i] as u32);
