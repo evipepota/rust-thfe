@@ -13,9 +13,9 @@ use crate::{
 use std::time::Instant;
 
 type Torus = u32;
-type Trgsw =
+pub type Trgsw =
     [[[Torus; param::trgsw::N]; (param::trgsw::K + 1) * param::trgsw::L]; param::trgsw::K + 1];
-type KeySwitch = Vec<TlweEncryptionlvl0>;
+pub type KeySwitch = Vec<TlweEncryptionlvl0>;
 
 fn trgsw(mu: &[i32], key: &TrlweKey) -> Trgsw {
     let mut trgsw: Trgsw =
@@ -211,7 +211,7 @@ fn gate_bootstrapping_tlwe2tlwe(src: &TlweEncryptionlvl0, bk: &[Trgsw]) -> TlweE
 }
 
 
-fn bootstrappingkey_gen(key: &TlweKeylvl0, key2: &TrlweKey) -> Vec<Trgsw> {
+pub fn bootstrappingkey_gen(key: &TlweKeylvl0, key2: &TrlweKey) -> Vec<Trgsw> {
     let trgsw_dum: Trgsw =
         [[[0; param::trgsw::N]; param::trgsw::L * (param::trgsw::K + 1)]; param::trgsw::K + 1];
     let mut res = vec![trgsw_dum; param::tlwe_lvl0::N]; //size...
@@ -221,7 +221,7 @@ fn bootstrappingkey_gen(key: &TlweKeylvl0, key2: &TrlweKey) -> Vec<Trgsw> {
     res
 }
 
-fn keyswtching_gen(key1: &TlweKeylvl1, key0: &TlweKeylvl0) -> KeySwitch {
+pub fn keyswtching_gen(key1: &TlweKeylvl1, key0: &TlweKeylvl0) -> KeySwitch {
     const KN: usize = param::trgsw::K * param::trgsw::N; //k*n
     let dummy = TlweEncryptionlvl0 {
         a: [0; param::tlwe_lvl0::N],
@@ -288,31 +288,6 @@ pub fn homnand(
     let t1 = gate_bootstrapping_tlwe2tlwe(&res, bk);
 
     identity_key_swtching(t1, ks)
-}
-
-pub fn nand_test() {
-    //key_gen
-    let sk_tlwe = TlweKeylvl0::keygen();
-    let sk_trlwe = TrlweKey::keygen();
-    let bk = bootstrappingkey_gen(&sk_tlwe, &sk_trlwe);
-
-    let sk_trlew2tlwelvl1 = sample_extract_index_key(&sk_trlwe);
-
-    let ks = keyswtching_gen(&sk_trlew2tlwelvl1, &sk_tlwe);
-    for _i in 0..30 {
-        let start = Instant::now();
-        let mut rng = rand::thread_rng();
-        let l = rng.gen_range(0..2);
-        let r = rng.gen_range(0..2);
-        let lhs = encrypt_bit_lvl0(l, &sk_tlwe);
-        let rhs = encrypt_bit_lvl0(r, &sk_tlwe);
-
-        let res = homnand(lhs, rhs, &bk, &ks);
-        let ans = decrypt_lvl0(&res.a, res.b, &sk_tlwe.key_s);
-        let end = start.elapsed();
-        println!("{} NAND {} = {}", l, r, ans);
-        println!("{}{:03}ms", end.as_secs(), end.subsec_millis());
-    }
 }
 
 #[allow(dead_code)]

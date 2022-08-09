@@ -1,20 +1,51 @@
 mod calc;
+mod key;
+mod param;
 mod sampleextractindex;
 mod tlwe;
 mod trgsw;
 mod trlwe;
-mod param;
 use calc::{
     complex,
     fft::{convolution_mod, fft_test},
 };
-use trgsw::nand_test;
 
+use key::{Cloudkey, Secretkey};
 use rand::Rng;
+use std::time::Instant;
+
+use crate::{
+    tlwe::{decrypt_lvl0, encrypt_bit_lvl0},
+    trgsw::homnand,
+};
 
 //type Torus = u32;
 
 fn main() {
+    nand_test();
+}
+
+pub fn nand_test() {
+    //key_gen
+    let sk: Secretkey = Secretkey::secretkey_gen();
+    let ck: Cloudkey = Cloudkey::cloudkey_gen(&sk);
+
+    for _i in 0..30 {
+        let start = Instant::now();
+        let mut rng = rand::thread_rng();
+        let l = rng.gen_range(0..2);
+        let r = rng.gen_range(0..2);
+        let lhs = encrypt_bit_lvl0(l, &sk.key_tlwelvl0);
+        let rhs = encrypt_bit_lvl0(r, &sk.key_tlwelvl0);
+        let res = homnand(lhs, rhs, &ck.key_bootstrap, &ck.key_keyswitch);
+        let ans = decrypt_lvl0(&res.a, res.b, &sk.key_tlwelvl0.key_s);
+        let end = start.elapsed();
+        println!("{} NAND {} = {}", l, r, ans);
+        println!("{}{:03}ms", end.as_secs(), end.subsec_millis());
+    }
+}
+
+pub fn test() {
     //cmuxtest();
     //test_blindrotate();
     nand_test();
