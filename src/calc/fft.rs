@@ -35,32 +35,57 @@ fn iufft(a: &mut [Complex]) {
         m *= 2;
     }
 
-    for i in a {
+    /*for i in a {
         // to do check
         i.re /= n as f64;
         i.im /= n as f64;
+    }*/
+
+    //n = N/2
+    //2N = 4n
+    for i in 0..n {
+        a[i] /= Complex::omega(4 * n, i as i64);
+        a[i].re /= n as f64;
+        a[i].im /= n as f64;
     }
 }
 
 pub fn convolution(a: &[i32], b: &[i32]) -> Vec<i64> {
     let n = a.len();
-    let mut com_a: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
-    let mut com_b: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; 2 * n];
+    let mut com_a: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; n / 2];
+    let mut com_b: Vec<Complex> = vec![Complex { re: 0.0, im: 0.0 }; n / 2];
     for i in 0..n {
-        com_a[i].re = a[i] as f64;
-        com_b[i].re = b[i] as f64;
+        if i < n / 2 {
+            com_a[i].re = a[i] as f64;
+            com_b[i].re = b[i] as f64;
+        } else {
+            com_a[i - n / 2].im = a[i] as f64;
+            com_a[i - n / 2] *= Complex::omega(2 * n, i as i64 - n as i64 / 2);
+            com_b[i - n / 2].im = b[i] as f64;
+            com_b[i - n / 2] *= Complex::omega(2 * n, i as i64 - n as i64 / 2);
+        }
     }
     ufft(&mut com_a);
     ufft(&mut com_b);
-    for i in 0..2 * n {
+    for i in 0..n / 2 {
         com_a[i] *= com_b[i];
     }
     iufft(&mut com_a);
 
     let mut ans = vec![0; 2 * n];
-    for i in 0..2 * n {
-        let k = com_a[i].re.round() as i64;
+    for i in 0..n / 2 {
+        let mut k = com_a[i].re.round() as i64;
+        k %= u32::MAX as i64;
+        if k < 0 {
+            k += u32::MAX as i64;
+        }
         ans[i] = k;
+        let mut k = com_a[i].im.round() as i64;
+        k %= u32::MAX as i64;
+        if k < 0 {
+            k += u32::MAX as i64;
+        }
+        ans[i + n / 2] = k;
     }
     return ans;
 }
@@ -88,8 +113,8 @@ pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
     }
     let mut k = convolution(&a_i64, &b_i64);
 
-    let mut res: Vec<Torus> = vec![0; n];
-    for i in 0..2 * n {
+    let mut res: Vec<Torus> = vec![0; 2 * n];
+    for i in 0..n {
         k[i] %= u32::MAX as i64;
         if k[i] < 0 {
             k[i] += u32::MAX as i64;
@@ -100,8 +125,7 @@ pub fn convolution_mod(a: &[Torus], b: &[Torus]) -> Vec<Torus> {
             res[i - n] = res[i - n].wrapping_sub(k[i] as u32);
         }
     }
-
-    return res;
+    res
 }
 
 pub fn fft_test(a: &[Torus], b: &[Torus]) -> Vec<Torus> {

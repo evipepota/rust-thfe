@@ -83,3 +83,12 @@ impl std::ops::MulAssign for Complex {
         self.im = cop.re * rhs.im + cop.im * rhs.re;
     }
 }
+
+impl std::ops::DivAssign for Complex {
+    fn div_assign(&mut self, rhs: Self) {
+        let cop = *self;
+        let norm = rhs.re * rhs.re + rhs.im * rhs.im;
+        self.re = (cop.re * rhs.re + cop.im * rhs.im) / norm;
+        self.im = (cop.im * rhs.re - cop.re * rhs.im) / norm;
+    }
+}
