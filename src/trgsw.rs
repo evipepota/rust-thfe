@@ -249,18 +249,92 @@ pub fn homnand(
     ks: &KeySwitch,
 ) -> TlweEncryptionlvl0 {
     const MU: Torus = 1 << 29;
-    let mut res = TlweEncryptionlvl0 {
+    let mut offset = TlweEncryptionlvl0 {
         a: [0; param::tlwe_lvl0::N],
         b: MU,
     };
     for i in 0..param::tlwe_lvl0::N {
-        res.a[i] = res.a[i].wrapping_sub(a0.a[i]);
-        res.a[i] = res.a[i].wrapping_sub(a1.a[i]);
+        offset.a[i] = offset.a[i].wrapping_sub(a0.a[i]); //scale:-1
+        offset.a[i] = offset.a[i].wrapping_sub(a1.a[i]); //scale:-1
     }
-    res.b = res.b.wrapping_sub(a0.b);
-    res.b = res.b.wrapping_sub(a1.b);
+    offset.b = offset.b.wrapping_sub(a0.b);
+    offset.b = offset.b.wrapping_sub(a1.b);
 
-    let t1 = gate_bootstrapping_tlwe2tlwe(&res, bk);
+    let t1 = gate_bootstrapping_tlwe2tlwe(&offset, bk);
+
+    identity_key_swtching(t1, ks)
+}
+
+pub fn homor(
+    a0: TlweEncryptionlvl0,
+    a1: TlweEncryptionlvl0,
+    bk: &[Trgsw],
+    ks: &KeySwitch,
+) -> TlweEncryptionlvl0 {
+    const MU: Torus = 1 << 29;
+    let mut offset = TlweEncryptionlvl0 {
+        a: [0; param::tlwe_lvl0::N],
+        b: MU,
+    };
+    for i in 0..param::tlwe_lvl0::N {
+        offset.a[i] = offset.a[i].wrapping_add(a0.a[i]); //scale:1
+        offset.a[i] = offset.a[i].wrapping_add(a1.a[i]); //scale:1
+    }
+    offset.b = offset.b.wrapping_add(a0.b);
+    offset.b = offset.b.wrapping_add(a1.b);
+
+    let t1 = gate_bootstrapping_tlwe2tlwe(&offset, bk);
+
+    identity_key_swtching(t1, ks)
+}
+
+pub fn homand(
+    a0: TlweEncryptionlvl0,
+    a1: TlweEncryptionlvl0,
+    bk: &[Trgsw],
+    ks: &KeySwitch,
+) -> TlweEncryptionlvl0 {
+    const MU: i32 = -(1 << 29);
+    const MU2: Torus = MU as Torus;
+    let mut offset = TlweEncryptionlvl0 {
+        a: [0; param::tlwe_lvl0::N],
+        b: MU2,
+    };
+    for i in 0..param::tlwe_lvl0::N {
+        offset.a[i] = offset.a[i].wrapping_add(a0.a[i]); //scale:1
+        offset.a[i] = offset.a[i].wrapping_add(a1.a[i]); //scale:1
+    }
+    offset.b = offset.b.wrapping_add(a0.b);
+    offset.b = offset.b.wrapping_add(a1.b);
+
+    let t1 = gate_bootstrapping_tlwe2tlwe(&offset, bk);
+
+    identity_key_swtching(t1, ks)
+}
+
+pub fn homxor(
+    a0: TlweEncryptionlvl0,
+    a1: TlweEncryptionlvl0,
+    bk: &[Trgsw],
+    ks: &KeySwitch,
+) -> TlweEncryptionlvl0 {
+    const MU: Torus = 1 << 30;
+    let mut offset = TlweEncryptionlvl0 {
+        a: [0; param::tlwe_lvl0::N],
+        b: MU,
+    };
+    for i in 0..param::tlwe_lvl0::N {
+        offset.a[i] = offset.a[i].wrapping_add(a0.a[i]);
+        offset.a[i] = offset.a[i].wrapping_add(a0.a[i]); //scale:2
+        offset.a[i] = offset.a[i].wrapping_add(a1.a[i]);
+        offset.a[i] = offset.a[i].wrapping_add(a1.a[i]); //scale:2
+    }
+    offset.b = offset.b.wrapping_add(a0.b);
+    offset.b = offset.b.wrapping_add(a0.b);
+    offset.b = offset.b.wrapping_add(a1.b);
+    offset.b = offset.b.wrapping_add(a1.b);
+
+    let t1 = gate_bootstrapping_tlwe2tlwe(&offset, bk);
 
     identity_key_swtching(t1, ks)
 }
