@@ -14,39 +14,35 @@ impl Clone for Complex {
     }
 }
 
-/*pub struct Omega {
-    pub o: [Complex; 512],
+use once_cell::sync::OnceCell;
+
+use crate::param;
+
+static OM: OnceCell<Omega> = OnceCell::new();
+pub(crate) fn init() {
+    let mut o = [[Complex { re: 0.0, im: 0.0 }; param::trgsw::N * 2]; param::trgsw::NBIT + 1];
+    for bit in 1..param::trgsw::NBIT + 2 {
+        for i in 0..param::trgsw::N * 2 {
+            o[bit - 1][i].re = (PI * 2.0 * (i as f64) / (1 << bit) as f64).cos();
+            o[bit - 1][i].im = (PI * 2.0 * (i as f64) / (1 << bit) as f64).sin();
+        }
+    }
+    OM.set(Omega { o: (o) });
+}
+pub struct Omega {
+    pub o: [[Complex; param::trgsw::N * 2]; param::trgsw::NBIT + 1],
 }
 
-impl Omega {
-    pub fn omega_init(n: usize) -> Self {
-        let mut o = [Complex { re: 0.0, im: 0.0 }; 512];
-        for i in 0..512 {
-            o[i].re = (PI * 2.0 * (i as f64) / (n as f64)).cos();
-            o[i].im = (PI * 2.0 * (i as f64) / (n as f64)).sin();
-        }
-        Omega { o: (o) }
-    }
-}*/
-
-/*impl Omega {
-    fn omega_inti
-}*/
-
 impl Complex {
-    /*
-    pub fn new(abs: f64, args: f64) -> Self {
-        Self {
-            re: (abs * args.cos()),
-            im: (abs * args.sin()),
-        }
-    }
-    */
     pub fn omega(n: usize, k: i64) -> Self {
-        Self {
-            re: (PI * 2.0 * (k as f64) / (n as f64)).cos(),
-            im: (PI * 2.0 * (k as f64) / (n as f64)).sin(),
+        let mut idx = 0;
+        for i in 0..param::trgsw::NBIT + 1 {
+            let ch = 1 << (i + 1);
+            if ch == n {
+                idx = i;
+            }
         }
+        OM.get().unwrap().o[idx][k as usize % n]
     }
 }
 

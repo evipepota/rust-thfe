@@ -7,6 +7,7 @@ name = "ango"
 version = "0.1.0"
 dependencies = [
  "num",
+ "once_cell",
  "rand",
  "rand_distr",
 ]
@@ -122,6 +123,12 @@ dependencies = [
  "autocfg",
  "libm",
 ]
+
+[[package]]
+name = "once_cell"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "ppv-lite86"

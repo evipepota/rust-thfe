@@ -6,7 +6,7 @@ mod tlwe;
 mod trgsw;
 mod trlwe;
 use calc::{
-    complex,
+    complex::{self, init},
     fft::{convolution_mod, fft_test},
 };
 
@@ -20,6 +20,7 @@ use crate::{
 };
 
 fn main() {
+    init();
     nand_test();
     //fft_testtest();
 }
